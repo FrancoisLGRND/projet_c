@@ -2,7 +2,7 @@
 #include <SDL_ttf.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <time.h>
 
 typedef struct {
     SDL_Rect rect;
@@ -11,6 +11,17 @@ typedef struct {
     char texte[50];
     TTF_Font *font;
 } Boutton;
+
+typedef struct {
+    SDL_Rect rect;
+    SDL_Color rectColor;
+} Tuyau;
+
+enum Page {
+    MENU,
+    PSEUDO,
+    JOUER,
+};
 
 Boutton initButton(int x, int y, int width, int height, SDL_Color rectColor, SDL_Color textColor, const char *texte, TTF_Font *font) {
     Boutton boutton;
@@ -24,6 +35,21 @@ Boutton initButton(int x, int y, int width, int height, SDL_Color rectColor, SDL
     boutton.font = font;
 
     return boutton;
+}
+
+Tuyau initTuyau(int x, int y, int width, int height, SDL_Color rectColor) {
+    Tuyau tuyau;
+    tuyau.rect.x = x;
+    tuyau.rect.y = y;
+    tuyau.rect.w = width;
+    tuyau.rect.h = height;
+    tuyau.rectColor = rectColor;
+
+    return tuyau;
+}
+
+int nombreRandom(int min, int max) {
+    return min + rand() % (max - min + 1);
 }
 
 int isMouseInsideButton(SDL_Event event, Boutton boutton) {
@@ -53,22 +79,28 @@ void drawTextOnButton(SDL_Renderer *renderer, Boutton *boutton) {
     SDL_DestroyTexture(textureTexte);
 }
 
-char *menu(SDL_Event event, Boutton menuBoutton1, Boutton menuBoutton2, int *running) {
+enum Page menu(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, Boutton menuBoutton1, Boutton menuBoutton2, Boutton menuBoutton3, int *running) {
+    enum Page page = MENU;
     switch (event.type) {
     case SDL_QUIT:
         *running = 0;
-        return "menu";
+        page = MENU;
         break;
     case SDL_MOUSEBUTTONDOWN:
         // Vérifier si le clic de souris est à l'intérieur d'un bouton
         if (isMouseInsideButton(event, menuBoutton1)) {
             printf("Clic sur le bouton!\n");
-            return "menu";
+            page = JOUER;
             // Vous pouvez ajouter du code pour réagir au clic ici
         }
         if (isMouseInsideButton(event, menuBoutton2)) {
             printf("azdijiazdazd!\n");
-            return "menu";
+            page = PSEUDO;
+            // Vous pouvez ajouter du code pour réagir au clic ici
+        }
+        if (isMouseInsideButton(event, menuBoutton3)) {
+            printf("azdijiazdazd!\n");
+            page = MENU;
             // Vous pouvez ajouter du code pour réagir au clic ici
         }
         break;
@@ -76,69 +108,160 @@ char *menu(SDL_Event event, Boutton menuBoutton1, Boutton menuBoutton2, int *run
         switch (event.key.keysym.sym) {
         case SDLK_ESCAPE:
             *running = 0;
-            return "menu";
+            page = MENU;
             break;
         default:
-            return "menu";
+            page = MENU;
             break;
         }
         break;
     default:
-        return "menu";
+        page = MENU;
         break;
     }
-    return "menu";
+    // Effacer l'écran
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
+
+    // Afficher l'image
+    SDL_RenderCopy(renderer, texture, NULL, NULL);
+
+    // Dessiner le bouton
+    SDL_SetRenderDrawColor(renderer, menuBoutton1.rectColor.r, menuBoutton1.rectColor.g, menuBoutton1.rectColor.b, menuBoutton1.rectColor.a);
+    SDL_RenderFillRect(renderer, &menuBoutton1.rect);
+    drawTextOnButton(renderer, &menuBoutton1);
+
+    SDL_SetRenderDrawColor(renderer, menuBoutton2.rectColor.r, menuBoutton2.rectColor.g, menuBoutton2.rectColor.b, menuBoutton2.rectColor.a);
+    SDL_RenderFillRect(renderer, &menuBoutton2.rect);
+    drawTextOnButton(renderer, &menuBoutton2);
+
+    SDL_SetRenderDrawColor(renderer, menuBoutton3.rectColor.r, menuBoutton3.rectColor.g, menuBoutton3.rectColor.b, menuBoutton3.rectColor.a);
+    SDL_RenderFillRect(renderer, &menuBoutton3.rect);
+    drawTextOnButton(renderer, &menuBoutton3);
+    return page;
 }
 
-
-int main(int argc, char *argv[]) {
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        return 1;
+enum Page pseudo(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, Boutton valider, Boutton *inputPseudo, int *running, char pseudoJoueur[50]) {
+    enum Page page = PSEUDO;
+    switch (event.type) {
+    case SDL_QUIT:
+        *running = 0;
+        page = MENU;
+        break;
+    case SDL_MOUSEBUTTONDOWN:
+        // Vérifier si le clic de souris est à l'intérieur d'un bouton
+        if (isMouseInsideButton(event, valider)) {
+            printf("a changer de pseudo!\n");
+            page = MENU;
+            // Vous pouvez ajouter du code pour réagir au clic ici
+        }
+        break;
+    case SDL_TEXTINPUT:
+        // Si un texte est entré, ajoutez le texte au buffer
+        strncat(pseudoJoueur, event.text.text, 50 - strlen(pseudoJoueur) - 1);
+        strncpy(inputPseudo->texte, pseudoJoueur, 50);
+        break;
+    case SDL_KEYDOWN:
+        switch (event.key.keysym.sym) {
+            case SDLK_ESCAPE:
+                *running = 0;
+                page = MENU;
+                break;
+            case SDLK_BACKSPACE:
+                if (strlen(pseudoJoueur) > 1) {
+                    // Supprime le dernier caractère si la touche Backspace est enfoncée
+                    pseudoJoueur[strlen(pseudoJoueur) - 1] = '\0';
+                    }
+                strncpy(inputPseudo->texte, pseudoJoueur, 50);
+                break;
+            default:
+                page = PSEUDO;
+                break;
+        }
+        break;
+    default:
+        page = PSEUDO;
+        break;
     }
-    TTF_Init();
+    
+    // Effacer l'écran
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
 
-    SDL_Window *fenetre = SDL_CreateWindow("Ma fenêtre", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1920, 1080, SDL_WINDOW_SHOWN);
-    if (fenetre == NULL) {
-        SDL_Quit();
-        return 1;
-    }
+    // Afficher l'image
+    SDL_RenderCopy(renderer, texture, NULL, NULL);
 
-    SDL_Renderer *renderer = SDL_CreateRenderer(fenetre, -1, SDL_RENDERER_ACCELERATED);
-    if (renderer == NULL) {
-        SDL_DestroyWindow(fenetre);
-        SDL_Quit();
-        return 1;
-    }
+    // Dessiner le bouton
+    SDL_SetRenderDrawColor(renderer, valider.rectColor.r, valider.rectColor.g, valider.rectColor.b, valider.rectColor.a);
+    SDL_RenderFillRect(renderer, &valider.rect);
+    drawTextOnButton(renderer, &valider);
 
-    TTF_Font *font = TTF_OpenFont("Butler_Regular.ttf", 24);
+    SDL_SetRenderDrawColor(renderer, inputPseudo->rectColor.r, inputPseudo->rectColor.g, inputPseudo->rectColor.b, inputPseudo->rectColor.a);
+    SDL_RenderFillRect(renderer, &inputPseudo->rect);
+    drawTextOnButton(renderer, inputPseudo);
+    return page;
 
-    Boutton menuBoutton1 = initButton(100, 100, 200, 50, (SDL_Color){0, 0, 0, 255}, (SDL_Color){255, 255, 255, 255}, "Couille :)", font);
-    Boutton menuBoutton2 = initButton(500, 100, 200, 50, (SDL_Color){0, 0, 0, 255}, (SDL_Color){255, 255, 255, 255}, "celestin", font);
 
-    // Chargement de l'image BMP
-    // ...
+}
 
-    SDL_Surface *surfaceImage = SDL_LoadBMP("menu.bmp");
-    if (surfaceImage == NULL) {
-        printf("Erreur lors du chargement de l'image : %s\n", SDL_GetError());
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(fenetre);
-        SDL_Quit();
-        return 1;
-    }
+enum Page jouer(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, int width, int height, int *running, char pseudoJoueur[50]) {
+    enum Page page = JOUER;
+    int alive = 1;
+    srand((unsigned int)time(NULL));
+    int espace_y = height / 5;
+    int espace_x = width / 5;
+    float decal_x1 = width;
+    float decal_x2 = width + espace_x;
+    float decal_x3 = width + 2 * espace_x;
 
-    // Créer une texture à partir de la surface
-    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surfaceImage);
-    SDL_FreeSurface(surfaceImage);
+    int tuyauY1 = nombreRandom(height / 4, height / 2 + height / 4);
+    int tuyauY2 = nombreRandom(height / 4, height / 2 + height / 4);
+    int tuyauY3 = nombreRandom(height / 4, height / 2 + height / 4);
 
-    // Boucle d'événements SDL
-    SDL_Event event;
-    int running = 1;
-    char *page = "menu"; 
+    while (alive) {
+        if (SDL_PollEvent(&event)) {
+            switch (event.type) {
+                case SDL_QUIT:
+                    *running = 0;
+                    alive = 0;
+                    page = MENU;
+                    break;
+                case SDL_KEYDOWN:
+                    switch (event.key.keysym.sym) {
+                        case SDLK_ESCAPE:
+                            alive = 0;
+                            page = MENU;
+                            break;
+                        default:
+                            page = MENU;
+                            break;
+                    }
+                    break;
+                default:
+                    page = MENU;
+                    break;
+            }
+        }
 
-    while (running) {
-        while (SDL_PollEvent(&event)) {
-            page = menu(event, menuBoutton1, menuBoutton2, &running);
+        // Mise à jour des coordonnées des tuyaux
+        decal_x1 -= 0.05; // ou tout autre décalage souhaité
+        decal_x2 -= 0.05;
+        decal_x3 -= 0.05;
+
+        // Suppression des tuyaux à gauche
+        if (decal_x1 + width / 5 < 0) {
+            decal_x1 = width;
+            tuyauY1 = nombreRandom(height / 4, height / 2 + height / 4);
+        }
+
+        if (decal_x2 + width / 5 < 0) {
+            decal_x2 = width;
+            tuyauY2 = nombreRandom(height / 4, height / 2 + height / 4);
+        }
+
+        if (decal_x3 + width / 5 < 0) {
+            decal_x3 = width;
+            tuyauY3 = nombreRandom(height / 4, height / 2 + height / 4);
         }
 
         // Effacer l'écran
@@ -148,16 +271,79 @@ int main(int argc, char *argv[]) {
         // Afficher l'image
         SDL_RenderCopy(renderer, texture, NULL, NULL);
 
-        // Dessiner le bouton
-        SDL_SetRenderDrawColor(renderer, menuBoutton1.rectColor.r, menuBoutton1.rectColor.g, menuBoutton1.rectColor.b, menuBoutton1.rectColor.a);
-        SDL_RenderFillRect(renderer, &menuBoutton1.rect);
-        drawTextOnButton(renderer, &menuBoutton1);
+        // Dessiner les tuyaux
+        Tuyau tuyau1 = initTuyau(decal_x1, 0, width / 20, tuyauY1, (SDL_Color){255, 0, 0, 255});
+        Tuyau tuyau2 = initTuyau(decal_x2, 0, width / 20, tuyauY2, (SDL_Color){255, 0, 0, 255});
+        Tuyau tuyau3 = initTuyau(decal_x3, 0, width / 20, tuyauY3, (SDL_Color){255, 0, 0, 255});
 
-        SDL_SetRenderDrawColor(renderer, menuBoutton2.rectColor.r, menuBoutton2.rectColor.g, menuBoutton2.rectColor.b, menuBoutton2.rectColor.a);
-        SDL_RenderFillRect(renderer, &menuBoutton2.rect);
-        drawTextOnButton(renderer, &menuBoutton2);
+        SDL_SetRenderDrawColor(renderer, tuyau1.rectColor.r, tuyau1.rectColor.g, tuyau1.rectColor.b, tuyau1.rectColor.a);
+        SDL_RenderFillRect(renderer, &tuyau1.rect);
 
-        // Mettre à jour l'affichage
+        SDL_SetRenderDrawColor(renderer, tuyau2.rectColor.r, tuyau2.rectColor.g, tuyau2.rectColor.b, tuyau2.rectColor.a);
+        SDL_RenderFillRect(renderer, &tuyau2.rect);
+
+        SDL_SetRenderDrawColor(renderer, tuyau3.rectColor.r, tuyau3.rectColor.g, tuyau3.rectColor.b, tuyau3.rectColor.a);
+        SDL_RenderFillRect(renderer, &tuyau3.rect);
+
+        SDL_RenderPresent(renderer);
+    }
+
+    return MENU;
+}
+
+
+int main() {
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        return 1;
+    }
+    TTF_Init();
+    int width = 1920;
+    int height = 1080;
+    int boutonWidth = width / 4;
+    int boutonHeight = height / 8;
+    SDL_Window *fenetre = SDL_CreateWindow("Ma fenêtre", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN);
+    SDL_Renderer *renderer = SDL_CreateRenderer(fenetre, -1, SDL_RENDERER_ACCELERATED);
+    TTF_Font *font = TTF_OpenFont("Butler_Regular.ttf", 24);
+    SDL_Surface *surfaceImage = SDL_LoadBMP("menu.bmp");
+
+    Boutton menuBoutton1 = initButton(width/2 - boutonWidth/2 , boutonHeight, boutonWidth, boutonHeight, (SDL_Color){0, 0, 0, 255}, (SDL_Color){255, 255, 255, 255}, "Jouer", font);
+    Boutton menuBoutton2 = initButton(width/2 - boutonWidth/2,  3 * boutonHeight, boutonWidth, boutonHeight, (SDL_Color){0, 0, 0, 255}, (SDL_Color){255, 255, 255, 255}, "Pseudo", font);
+    Boutton menuBoutton3 = initButton(width/2 - boutonWidth/2,  5 * boutonHeight, boutonWidth, boutonHeight, (SDL_Color){0, 0, 0, 255}, (SDL_Color){255, 255, 255, 255}, "Difficultée", font);
+
+    Boutton valider = initButton(width/2 - boutonWidth/2 , boutonHeight, boutonWidth, boutonHeight, (SDL_Color){0, 0, 0, 255}, (SDL_Color){255, 255, 255, 255}, "Valider", font);
+    Boutton inputPseudo = initButton(width/2 - boutonWidth/2,  3 * boutonHeight, boutonWidth, boutonHeight, (SDL_Color){0, 0, 0, 255}, (SDL_Color){255, 255, 255, 255}, "Entrer un Pseudo", font);
+    
+    
+
+
+
+    // Créer une texture à partir de la surface
+    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surfaceImage);
+    SDL_FreeSurface(surfaceImage);
+
+    // Boucle d'événements SDL
+    SDL_Event event;
+    char pseudoJoueur[50] = "";
+    int running = 1;
+    enum Page page = MENU;
+
+    while (running) {
+        while (SDL_PollEvent(&event)) {
+            switch (page) {
+                case MENU:
+                    page = menu(renderer, texture, event, menuBoutton1, menuBoutton2, menuBoutton3, &running);
+                    break;
+                case PSEUDO:
+                    page = pseudo(renderer, texture, event, valider, &inputPseudo, &running, pseudoJoueur);
+                    printf("%s\n", pseudoJoueur);
+                    break;
+                case JOUER:
+                    page = jouer(renderer, texture, event, width, height, &running, pseudoJoueur);
+                    printf("%s\n", pseudoJoueur);
+                    break;
+            }
+        }
+        // Mettre à jour l'affichage et le texte du inputPseudo
         SDL_RenderPresent(renderer);
     }
 
