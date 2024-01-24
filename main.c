@@ -102,17 +102,14 @@ enum Page menu(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, Bo
         if (isMouseInsideButton(event, menuBoutton1))
         {
             page = JOUER;
-            // Vous pouvez ajouter du code pour réagir au clic ici
         }
         if (isMouseInsideButton(event, menuBoutton2))
         {
             page = PSEUDO;
-            // Vous pouvez ajouter du code pour réagir au clic ici
         }
         if (isMouseInsideButton(event, menuBoutton3))
         {
             page = DIFF;
-            // Vous pouvez ajouter du code pour réagir au clic ici
         }
         break;
     case SDL_KEYDOWN:
@@ -408,24 +405,20 @@ enum Page diff(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, Bo
         page = MENU;
         break;
     case SDL_MOUSEBUTTONDOWN:
-        // Vérifier si le clic de souris est à l'intérieur d'un bouton
         if (isMouseInsideButton(event, diff1))
         {
             *diffChoice = 1;
             page = MENU;
-            // Vous pouvez ajouter du code pour réagir au clic ici
         }
         if (isMouseInsideButton(event, diff2))
         {
             *diffChoice = 2;
             page = MENU;
-            // Vous pouvez ajouter du code pour réagir au clic ici
         }
         if (isMouseInsideButton(event, diff3))
         {
             *diffChoice = 3;
             page = MENU;
-            // Vous pouvez ajouter du code pour réagir au clic ici
         }
         break;
     case SDL_KEYDOWN:
