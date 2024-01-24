@@ -207,16 +207,44 @@ enum Page pseudo(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, 
 enum Page jouer(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, int width, int height, int *running, char pseudoJoueur[50]) {
     enum Page page = JOUER;
     int alive = 1;
+    int score = 0;
     srand((unsigned int)time(NULL));
-    int espace_y = height / 5;
-    int espace_x = width / 5;
-    float decal_x1 = width;
-    float decal_x2 = width + espace_x;
-    float decal_x3 = width + 2 * espace_x;
+    float delayMS = 10;
+   
+    int espace_y = height / 6;
+    int espace_x = width / 4;
 
-    int tuyauY1 = nombreRandom(height / 4, height / 2 + height / 4);
-    int tuyauY2 = nombreRandom(height / 4, height / 2 + height / 4);
-    int tuyauY3 = nombreRandom(height / 4, height / 2 + height / 4);
+    int joueurX = width / 8 ;
+    int joueurY = height / 2;
+    int joueurWidth = width/20;
+    int joueurHeight = height/10;
+    int tuyauWidth = width / 20;
+    int spaceKey = 0;
+    
+
+    // Calculer le nombre de tuyaux en fonction de la largeur de la fenêtre
+    int nombreTuyaux = width / (espace_x + width / 20);
+
+    // Calculer l'espacement nécessaire entre chaque paire de tuyaux
+    int espacementTotal = width - espace_x;
+    int espacementEntreTuyaux = espacementTotal / (nombreTuyaux - 1);
+
+    float tuyauX[nombreTuyaux];
+    int tuyauY[nombreTuyaux];
+    Tuyau arrayTuyauHaut[nombreTuyaux];
+    Tuyau arrayTuyauBas[nombreTuyaux];
+
+    SDL_Surface *imageJoueur = SDL_LoadBMP("bird.bmp");
+    SDL_Texture *textureJoueur = SDL_CreateTextureFromSurface(renderer, imageJoueur);
+    SDL_Rect PositionJoueur = {joueurX, joueurY, joueurWidth, joueurHeight};
+    SDL_FreeSurface(imageJoueur);
+
+    // Initialisation des coordonnées des tuyaux
+    for (int i = 0; i < nombreTuyaux; ++i) {
+        tuyauX[i] = width + i * espacementEntreTuyaux;
+        tuyauY[i] = nombreRandom(height / 4, height / 2 + height / 4);
+
+    }
 
     while (alive) {
         if (SDL_PollEvent(&event)) {
@@ -232,60 +260,81 @@ enum Page jouer(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, i
                             alive = 0;
                             page = MENU;
                             break;
+                        case SDLK_SPACE:
+                            spaceKey = 1;
+                            break;
                         default:
                             page = MENU;
                             break;
                     }
                     break;
+                case SDL_KEYUP:
+                    if(event.key.keysym.sym == SDLK_SPACE){
+                        spaceKey = 0;
+                    }        
+                    break;
                 default:
-                    page = MENU;
+                    page = JOUER;
                     break;
             }
         }
-
-        // Mise à jour des coordonnées des tuyaux
-        decal_x1 -= 0.05; // ou tout autre décalage souhaité
-        decal_x2 -= 0.05;
-        decal_x3 -= 0.05;
-
-        // Suppression des tuyaux à gauche
-        if (decal_x1 + width / 5 < 0) {
-            decal_x1 = width;
-            tuyauY1 = nombreRandom(height / 4, height / 2 + height / 4);
-        }
-
-        if (decal_x2 + width / 5 < 0) {
-            decal_x2 = width;
-            tuyauY2 = nombreRandom(height / 4, height / 2 + height / 4);
-        }
-
-        if (decal_x3 + width / 5 < 0) {
-            decal_x3 = width;
-            tuyauY3 = nombreRandom(height / 4, height / 2 + height / 4);
-        }
-
-        // Effacer l'écran
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
         // Afficher l'image
         SDL_RenderCopy(renderer, texture, NULL, NULL);
+        SDL_RenderCopy(renderer, textureJoueur, NULL, &PositionJoueur);
+        
+        //update position joueur
+        if (spaceKey == 1) {
+            PositionJoueur.y -= 5;
+        } else {
+            PositionJoueur.y += 5;
 
-        // Dessiner les tuyaux
-        Tuyau tuyau1 = initTuyau(decal_x1, 0, width / 20, tuyauY1, (SDL_Color){255, 0, 0, 255});
-        Tuyau tuyau2 = initTuyau(decal_x2, 0, width / 20, tuyauY2, (SDL_Color){255, 0, 0, 255});
-        Tuyau tuyau3 = initTuyau(decal_x3, 0, width / 20, tuyauY3, (SDL_Color){255, 0, 0, 255});
+        }
+ 
+        
+        for (int i = 0; i < nombreTuyaux; ++i) {
+            tuyauX[i] -= 5;
 
-        SDL_SetRenderDrawColor(renderer, tuyau1.rectColor.r, tuyau1.rectColor.g, tuyau1.rectColor.b, tuyau1.rectColor.a);
-        SDL_RenderFillRect(renderer, &tuyau1.rect);
+            // Suppression des tuyaux à gauche
+            if (tuyauX[i] + width / 20 < 0) {
+                tuyauX[i] = width;
+                tuyauY[i] = nombreRandom(height / 4, height / 2 + height / 4);
+ 
+            }
+            // Dessiner le tuyau
+             arrayTuyauHaut[i] = initTuyau(tuyauX[i], 0, tuyauWidth, tuyauY[i] - espace_y, (SDL_Color){255, 0, 0, 255});
+             arrayTuyauBas[i] = initTuyau(tuyauX[i], tuyauY[i] + espace_y, tuyauWidth, height - espace_y, (SDL_Color){255, 0, 0, 255});
+             
+             SDL_SetRenderDrawColor(renderer, arrayTuyauHaut[i].rectColor.r, arrayTuyauHaut[i].rectColor.g, arrayTuyauHaut[i].rectColor.b, arrayTuyauHaut[i].rectColor.a);
+             SDL_SetRenderDrawColor(renderer, arrayTuyauBas[i].rectColor.r, arrayTuyauBas[i].rectColor.g, arrayTuyauBas[i].rectColor.b, arrayTuyauBas[i].rectColor.a);
+             
+            SDL_RenderFillRect(renderer, &arrayTuyauHaut[i].rect);
+            SDL_RenderFillRect(renderer, &arrayTuyauBas[i].rect);
 
-        SDL_SetRenderDrawColor(renderer, tuyau2.rectColor.r, tuyau2.rectColor.g, tuyau2.rectColor.b, tuyau2.rectColor.a);
-        SDL_RenderFillRect(renderer, &tuyau2.rect);
+            //On vérifie si le joueur réalise une collision avec les tuyaux ou avec le sol
+            if (((joueurX+joueurWidth > tuyauX[i] && joueurX+joueurWidth < tuyauX[i] + tuyauWidth ) && (PositionJoueur.y+joueurHeight  < tuyauY[i] || PositionJoueur.y+joueurHeight > tuyauY[i] + espace_y )) || PositionJoueur.y > height) {
+            alive = 0;
+            }
 
-        SDL_SetRenderDrawColor(renderer, tuyau3.rectColor.r, tuyau3.rectColor.g, tuyau3.rectColor.b, tuyau3.rectColor.a);
-        SDL_RenderFillRect(renderer, &tuyau3.rect);
 
-        SDL_RenderPresent(renderer);
+
+
+
+            // Changement vitesse
+            
+            if (joueurX == tuyauX[i]) {
+            delayMS -= 1;
+            score += 1;
+            printf("score : %d\n", score);
+            }
+          
+            
+            
+        }
+          SDL_RenderPresent(renderer);
+          SDL_Delay(delayMS);
     }
 
     return MENU;
@@ -297,14 +346,20 @@ int main() {
         return 1;
     }
     TTF_Init();
-    int width = 1920;
-    int height = 1080;
+    SDL_DisplayMode resolution;
+    SDL_GetDesktopDisplayMode(0, &resolution);
+    int width = resolution.w;
+    int height = resolution.h;
     int boutonWidth = width / 4;
     int boutonHeight = height / 8;
     SDL_Window *fenetre = SDL_CreateWindow("Ma fenêtre", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN);
     SDL_Renderer *renderer = SDL_CreateRenderer(fenetre, -1, SDL_RENDERER_ACCELERATED);
     TTF_Font *font = TTF_OpenFont("Butler_Regular.ttf", 24);
+    // Création de l'image de fond 
     SDL_Surface *surfaceImage = SDL_LoadBMP("menu.bmp");
+    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surfaceImage);
+    SDL_FreeSurface(surfaceImage);
+
 
     Boutton menuBoutton1 = initButton(width/2 - boutonWidth/2 , boutonHeight, boutonWidth, boutonHeight, (SDL_Color){0, 0, 0, 255}, (SDL_Color){255, 255, 255, 255}, "Jouer", font);
     Boutton menuBoutton2 = initButton(width/2 - boutonWidth/2,  3 * boutonHeight, boutonWidth, boutonHeight, (SDL_Color){0, 0, 0, 255}, (SDL_Color){255, 255, 255, 255}, "Pseudo", font);
@@ -317,10 +372,8 @@ int main() {
 
 
 
-    // Créer une texture à partir de la surface
-    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surfaceImage);
-    SDL_FreeSurface(surfaceImage);
 
+    
     // Boucle d'événements SDL
     SDL_Event event;
     char pseudoJoueur[50] = "";
