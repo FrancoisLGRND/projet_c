@@ -21,6 +21,7 @@ enum Page {
     MENU,
     PSEUDO,
     JOUER,
+    DIFF
 };
 
 Boutton initButton(int x, int y, int width, int height, SDL_Color rectColor, SDL_Color textColor, const char *texte, TTF_Font *font) {
@@ -64,7 +65,7 @@ void drawTextOnButton(SDL_Renderer *renderer, Boutton *boutton) {
     int maxTextHeight = boutton->rect.h; // Hauteur maximale du texte (hauteur du bouton)
     int margin = 10;
 
-    SDL_Surface *textSurface = TTF_RenderText_Blended_Wrapped(boutton->font, boutton->texte, boutton->textColor, maxTextWidth);
+    SDL_Surface *textSurface = TTF_RenderUTF8_Blended_Wrapped(boutton->font, boutton->texte, boutton->textColor, maxTextWidth);
 
     int centerX = boutton->rect.x + margin + (maxTextWidth - 2 * margin - textSurface->w) / 2;
     int centerY = boutton->rect.y + margin + (maxTextHeight - 2 * margin - textSurface->h) / 2;
@@ -79,7 +80,7 @@ void drawTextOnButton(SDL_Renderer *renderer, Boutton *boutton) {
     SDL_DestroyTexture(textureTexte);
 }
 
-enum Page menu(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, Boutton menuBoutton1, Boutton menuBoutton2, Boutton menuBoutton3, int *running) {
+enum Page menu(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, Boutton menuBoutton1, Boutton menuBoutton2, Boutton menuBoutton3, int *running, Boutton highestScoreRect, char highestScoreTexte[16]) {
     enum Page page = MENU;
     switch (event.type) {
     case SDL_QUIT:
@@ -135,10 +136,16 @@ enum Page menu(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, Bo
     SDL_SetRenderDrawColor(renderer, menuBoutton3.rectColor.r, menuBoutton3.rectColor.g, menuBoutton3.rectColor.b, menuBoutton3.rectColor.a);
     SDL_RenderFillRect(renderer, &menuBoutton3.rect);
     drawTextOnButton(renderer, &menuBoutton3);
+
+    
+    strncpy(highestScoreRect.texte, highestScoreTexte, 16);
+    SDL_SetRenderDrawColor(renderer, highestScoreRect.rectColor.r, highestScoreRect.rectColor.g, highestScoreRect.rectColor.b, highestScoreRect.rectColor.a);
+    SDL_RenderFillRect(renderer, &highestScoreRect.rect);
+    drawTextOnButton(renderer, &highestScoreRect);
     return page;
 }
 
-enum Page pseudo(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, Boutton valider, Boutton *inputPseudo, int *running, char pseudoJoueur[50]) {
+enum Page pseudo(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, Boutton valider, Boutton *inputPseudo, int *running, char pseudoJoueur[50], Boutton highestScoreRect, char highestScoreTexte[16]) {
     enum Page page = PSEUDO;
     switch (event.type) {
     case SDL_QUIT:
@@ -148,6 +155,10 @@ enum Page pseudo(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, 
     case SDL_MOUSEBUTTONDOWN:
         // Vérifier si le clic de souris est à l'intérieur d'un bouton
         if (isMouseInsideButton(event, valider)) {
+            if (strcmp(pseudoJoueur, " ") == 0){
+                    strcpy(pseudoJoueur, "Guest");
+                    strncpy(inputPseudo->texte, pseudoJoueur, 50);
+                    }
             page = MENU;
             // Vous pouvez ajouter du code pour réagir au clic ici
         }
@@ -168,7 +179,7 @@ enum Page pseudo(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, 
                     pseudoJoueur[strlen(pseudoJoueur) - 1] = '\0';
                     }
                 if (strlen(pseudoJoueur) == 0){
-                    pseudoJoueur = " ";
+                    strcpy(pseudoJoueur, " ");
                     }
                 strncpy(inputPseudo->texte, pseudoJoueur, 50);
                 
@@ -198,15 +209,22 @@ enum Page pseudo(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, 
     SDL_SetRenderDrawColor(renderer, inputPseudo->rectColor.r, inputPseudo->rectColor.g, inputPseudo->rectColor.b, inputPseudo->rectColor.a);
     SDL_RenderFillRect(renderer, &inputPseudo->rect);
     drawTextOnButton(renderer, inputPseudo);
+
+    strncpy(highestScoreRect.texte, highestScoreTexte, 16);
+    SDL_SetRenderDrawColor(renderer, highestScoreRect.rectColor.r, highestScoreRect.rectColor.g, highestScoreRect.rectColor.b, highestScoreRect.rectColor.a);
+    SDL_RenderFillRect(renderer, &highestScoreRect.rect);
+    drawTextOnButton(renderer, &highestScoreRect);
     return page;
 
 
 }
 
-enum Page jouer(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, int width, int height, int *running, char pseudoJoueur[50]) {
+enum Page jouer(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, int width, int height, int *running, char pseudoJoueur[50], int *highestScore) {
     enum Page page = JOUER;
     int alive = 1;
     int score = 0;
+    char scoreStr[16] = "Score : ";
+    sprintf(scoreStr, "score : %d", score);
     srand((unsigned int)time(NULL));
     float delayMS = 10;
    
@@ -232,8 +250,11 @@ enum Page jouer(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, i
     int tuyauY[nombreTuyaux];
     Tuyau arrayTuyauHaut[nombreTuyaux];
     Tuyau arrayTuyauBas[nombreTuyaux];
+
     TTF_Font *font = TTF_OpenFont("Butler_Regular.ttf", 24);
-    Boutton pseudoText = initButton(joueurX , joueurY-joueurHeight/2, joueurWidth, joueurHeight/2, (SDL_Color){0, 0, 0, 55}, (SDL_Color){255, 255, 255, 255}, pseudoJoueur, font);
+    Boutton pseudoTexte = initButton(joueurX , joueurY-joueurHeight/2, joueurWidth, joueurHeight/2, (SDL_Color){0, 0, 0, 55}, (SDL_Color){255, 255, 255, 255}, pseudoJoueur, font);
+    Boutton scoreTexte = initButton(0 , 0, width / 8 , height/12, (SDL_Color){0, 0, 0, 55}, (SDL_Color){255, 255, 255, 255}, scoreStr, font);
+
 
     SDL_Surface *imageJoueur = SDL_LoadBMP("bird.bmp");
     SDL_Texture *textureJoueur = SDL_CreateTextureFromSurface(renderer, imageJoueur);
@@ -282,21 +303,27 @@ enum Page jouer(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, i
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
-        // Afficher l'image
+        //Affichage image
         SDL_RenderCopy(renderer, texture, NULL, NULL);
         SDL_RenderCopy(renderer, textureJoueur, NULL, &PositionJoueur);
 
-        SDL_SetRenderDrawColor(renderer, pseudoText.rectColor.r, pseudoText.rectColor.g, pseudoText.rectColor.b, pseudoText.rectColor.a);
-        SDL_RenderFillRect(renderer, &pseudoText.rect);
-        drawTextOnButton(renderer, &pseudoText);
+        //Affichage pseudo
+        SDL_SetRenderDrawColor(renderer, pseudoTexte.rectColor.r, pseudoTexte.rectColor.g, pseudoTexte.rectColor.b, pseudoTexte.rectColor.a);
+        SDL_RenderFillRect(renderer, &pseudoTexte.rect);
+        drawTextOnButton(renderer, &pseudoTexte);
         
+        //Affichage score
+        SDL_SetRenderDrawColor(renderer, scoreTexte.rectColor.r, scoreTexte.rectColor.g, scoreTexte.rectColor.b, scoreTexte.rectColor.a);
+        SDL_RenderFillRect(renderer, &scoreTexte.rect);
+        drawTextOnButton(renderer, &scoreTexte);
+
         //update position joueur
         if (spaceKey == 1) {
             PositionJoueur.y -= 5;
-            pseudoText.rect.y -= 5;
+            pseudoTexte.rect.y -= 5;
         } else {
             PositionJoueur.y += 5;
-            pseudoText.rect.y += 5;
+            pseudoTexte.rect.y += 5;
 
         }
  
@@ -304,13 +331,13 @@ enum Page jouer(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, i
         for (int i = 0; i < nombreTuyaux; ++i) {
             tuyauX[i] -= 5;
 
-            // Suppression des tuyaux à gauche
+            //Suppression des tuyaux à gauche
             if (tuyauX[i] + width / 20 < 0) {
                 tuyauX[i] = width;
                 tuyauY[i] = nombreRandom(height / 4, height / 2 + height / 4);
  
             }
-            // Dessiner le tuyau
+            //Dessiner le tuyau
              arrayTuyauHaut[i] = initTuyau(tuyauX[i], 0, tuyauWidth, tuyauY[i] - espace_y, (SDL_Color){255, 0, 0, 255});
              arrayTuyauBas[i] = initTuyau(tuyauX[i], tuyauY[i] + espace_y, tuyauWidth, height - espace_y, (SDL_Color){255, 0, 0, 255});
              
@@ -334,6 +361,8 @@ enum Page jouer(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, i
             if (joueurX == tuyauX[i]) {
             delayMS -= 1;
             score += 1;
+            sprintf(scoreStr, "score : %d", score);
+            strncpy(scoreTexte.texte, scoreStr, 16);
             printf("score : %d\n", score);
             }
           
@@ -343,7 +372,9 @@ enum Page jouer(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, i
           SDL_RenderPresent(renderer);
           SDL_Delay(delayMS);
     }
-
+    if (score > *highestScore) {
+        *highestScore = score;
+    }
     return MENU;
 }
 
@@ -372,44 +403,58 @@ int main() {
     Boutton menuBoutton1 = initButton(width/2 - boutonWidth/2 , boutonHeight, boutonWidth, boutonHeight, (SDL_Color){0, 0, 0, 255}, (SDL_Color){255, 255, 255, 255}, "Jouer", font);
     Boutton menuBoutton2 = initButton(width/2 - boutonWidth/2,  3 * boutonHeight, boutonWidth, boutonHeight, (SDL_Color){0, 0, 0, 255}, (SDL_Color){255, 255, 255, 255}, "Pseudo", font);
     Boutton menuBoutton3 = initButton(width/2 - boutonWidth/2,  5 * boutonHeight, boutonWidth, boutonHeight, (SDL_Color){0, 0, 0, 255}, (SDL_Color){255, 255, 255, 255}, "Difficultée", font);
-
+  
     Boutton valider = initButton(width/2 - boutonWidth/2 , boutonHeight, boutonWidth, boutonHeight, (SDL_Color){0, 0, 0, 255}, (SDL_Color){255, 255, 255, 255}, "Valider", font);
     char pseudoJoueur[50] = "Guest";
     Boutton inputPseudo = initButton(width/2 - boutonWidth/2,  3 * boutonHeight, boutonWidth, boutonHeight, (SDL_Color){0, 0, 0, 255}, (SDL_Color){255, 255, 255, 255}, pseudoJoueur, font);
     
+    //récupération du meilleur score
+    int highestScore;
+    char highestScoreStr[16];
+    FILE *fichierRead = fopen("highestScore.txt", "r");
+    fgets(highestScoreStr, sizeof(highestScoreStr), fichierRead);
+    highestScore = atoi(highestScoreStr);
+    fclose(fichierRead);
+    char highestScoreTexte[16];
+    sprintf(highestScoreTexte, "score : %d", highestScore);
+    Boutton highestScoreRect = initButton(0 , 0, width / 8 , height/12, (SDL_Color){0, 0, 0, 55}, (SDL_Color){255, 255, 255, 255}, highestScoreTexte, font);
     
-
-
-
-
-    
-    // Boucle d'événements SDL
     SDL_Event event;
     
     int running = 1;
     enum Page page = MENU;
 
     while (running) {
+        FILE *fichierRead = fopen("highestScore.txt", "r");
+        fgets(highestScoreStr, sizeof(highestScoreStr), fichierRead);
+        highestScore = atoi(highestScoreStr);
+        fclose(fichierRead);
+        sprintf(highestScoreTexte, "score : %d", highestScore);
         while (SDL_PollEvent(&event)) {
             switch (page) {
                 case MENU:
-                    page = menu(renderer, texture, event, menuBoutton1, menuBoutton2, menuBoutton3, &running);
+                    page = menu(renderer, texture, event, menuBoutton1, menuBoutton2, menuBoutton3, &running, highestScoreRect, highestScoreTexte);
                     break;
                 case PSEUDO:
-                    page = pseudo(renderer, texture, event, valider, &inputPseudo, &running, pseudoJoueur);
+                    page = pseudo(renderer, texture, event, valider, &inputPseudo, &running, pseudoJoueur, highestScoreRect, highestScoreTexte);
                     printf("%s\n", pseudoJoueur);
                     break;
                 case JOUER:
-                    page = jouer(renderer, texture, event, width, height, &running, pseudoJoueur);
+                    page = jouer(renderer, texture, event, width, height, &running, pseudoJoueur, &highestScore);
                     printf("%s\n", pseudoJoueur);
                     break;
+                
             }
         }
-        // Mettre à jour l'affichage et le texte du inputPseudo
+        FILE *fichierWrite = fopen("highestScore.txt", "w");
+        fprintf(fichierWrite, "%d", highestScore);
+        fclose(fichierWrite);
         SDL_RenderPresent(renderer);
     }
+    
 
     // Libération des ressources
+    
     TTF_CloseFont(font);
     TTF_Quit();
     SDL_DestroyTexture(texture);
