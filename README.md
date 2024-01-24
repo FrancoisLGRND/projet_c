@@ -1,5 +1,5 @@
 ##Commande pour compiler:
-gcc -o flappy bird main.c -std=c11 -Wall -Wextra $(pkg-config --cflags --libs sdl2 SDL2_ttf glib-2.0) -Wl,-subsystem,windows -DSDL_MAIN_HANDLED
+gcc -o 'flappy bird' main.c -std=c11 -Wall -Wextra $(pkg-config --cflags --libs sdl2 SDL2_ttf glib-2.0) -Wl,-subsystem,windows -DSDL_MAIN_HANDLED
 
 ##Commande pour télécharger les libs:
 pacman -S mingw-w64-x86_64-SDL2 
