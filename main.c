@@ -89,17 +89,14 @@ enum Page menu(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, Bo
     case SDL_MOUSEBUTTONDOWN:
         // Vérifier si le clic de souris est à l'intérieur d'un bouton
         if (isMouseInsideButton(event, menuBoutton1)) {
-            printf("Clic sur le bouton!\n");
             page = JOUER;
             // Vous pouvez ajouter du code pour réagir au clic ici
         }
         if (isMouseInsideButton(event, menuBoutton2)) {
-            printf("azdijiazdazd!\n");
             page = PSEUDO;
             // Vous pouvez ajouter du code pour réagir au clic ici
         }
         if (isMouseInsideButton(event, menuBoutton3)) {
-            printf("azdijiazdazd!\n");
             page = MENU;
             // Vous pouvez ajouter du code pour réagir au clic ici
         }
@@ -151,7 +148,6 @@ enum Page pseudo(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, 
     case SDL_MOUSEBUTTONDOWN:
         // Vérifier si le clic de souris est à l'intérieur d'un bouton
         if (isMouseInsideButton(event, valider)) {
-            printf("a changer de pseudo!\n");
             page = MENU;
             // Vous pouvez ajouter du code pour réagir au clic ici
         }
@@ -168,11 +164,14 @@ enum Page pseudo(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, 
                 page = MENU;
                 break;
             case SDLK_BACKSPACE:
-                if (strlen(pseudoJoueur) > 1) {
-                    // Supprime le dernier caractère si la touche Backspace est enfoncée
+                if (strlen(pseudoJoueur) > 0) {           
                     pseudoJoueur[strlen(pseudoJoueur) - 1] = '\0';
                     }
+                if (strlen(pseudoJoueur) == 0){
+                    pseudoJoueur = " ";
+                    }
                 strncpy(inputPseudo->texte, pseudoJoueur, 50);
+                
                 break;
             default:
                 page = PSEUDO;
@@ -233,6 +232,8 @@ enum Page jouer(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, i
     int tuyauY[nombreTuyaux];
     Tuyau arrayTuyauHaut[nombreTuyaux];
     Tuyau arrayTuyauBas[nombreTuyaux];
+    TTF_Font *font = TTF_OpenFont("Butler_Regular.ttf", 24);
+    Boutton pseudoText = initButton(joueurX , joueurY-joueurHeight/2, joueurWidth, joueurHeight/2, (SDL_Color){0, 0, 0, 55}, (SDL_Color){255, 255, 255, 255}, pseudoJoueur, font);
 
     SDL_Surface *imageJoueur = SDL_LoadBMP("bird.bmp");
     SDL_Texture *textureJoueur = SDL_CreateTextureFromSurface(renderer, imageJoueur);
@@ -284,12 +285,18 @@ enum Page jouer(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, i
         // Afficher l'image
         SDL_RenderCopy(renderer, texture, NULL, NULL);
         SDL_RenderCopy(renderer, textureJoueur, NULL, &PositionJoueur);
+
+        SDL_SetRenderDrawColor(renderer, pseudoText.rectColor.r, pseudoText.rectColor.g, pseudoText.rectColor.b, pseudoText.rectColor.a);
+        SDL_RenderFillRect(renderer, &pseudoText.rect);
+        drawTextOnButton(renderer, &pseudoText);
         
         //update position joueur
         if (spaceKey == 1) {
             PositionJoueur.y -= 5;
+            pseudoText.rect.y -= 5;
         } else {
             PositionJoueur.y += 5;
+            pseudoText.rect.y += 5;
 
         }
  
@@ -354,6 +361,7 @@ int main() {
     int boutonHeight = height / 8;
     SDL_Window *fenetre = SDL_CreateWindow("Ma fenêtre", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN);
     SDL_Renderer *renderer = SDL_CreateRenderer(fenetre, -1, SDL_RENDERER_ACCELERATED);
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     TTF_Font *font = TTF_OpenFont("Butler_Regular.ttf", 24);
     // Création de l'image de fond 
     SDL_Surface *surfaceImage = SDL_LoadBMP("menu.bmp");
@@ -366,7 +374,8 @@ int main() {
     Boutton menuBoutton3 = initButton(width/2 - boutonWidth/2,  5 * boutonHeight, boutonWidth, boutonHeight, (SDL_Color){0, 0, 0, 255}, (SDL_Color){255, 255, 255, 255}, "Difficultée", font);
 
     Boutton valider = initButton(width/2 - boutonWidth/2 , boutonHeight, boutonWidth, boutonHeight, (SDL_Color){0, 0, 0, 255}, (SDL_Color){255, 255, 255, 255}, "Valider", font);
-    Boutton inputPseudo = initButton(width/2 - boutonWidth/2,  3 * boutonHeight, boutonWidth, boutonHeight, (SDL_Color){0, 0, 0, 255}, (SDL_Color){255, 255, 255, 255}, "Entrer un Pseudo", font);
+    char pseudoJoueur[50] = "Guest";
+    Boutton inputPseudo = initButton(width/2 - boutonWidth/2,  3 * boutonHeight, boutonWidth, boutonHeight, (SDL_Color){0, 0, 0, 255}, (SDL_Color){255, 255, 255, 255}, pseudoJoueur, font);
     
     
 
@@ -376,7 +385,7 @@ int main() {
     
     // Boucle d'événements SDL
     SDL_Event event;
-    char pseudoJoueur[50] = "";
+    
     int running = 1;
     enum Page page = MENU;
 
