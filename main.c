@@ -174,11 +174,9 @@ enum Page pseudo(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, 
                 strncpy(inputPseudo->texte, pseudoJoueur, 50);
             }
             page = MENU;
-            // Vous pouvez ajouter du code pour réagir au clic ici
         }
         break;
     case SDL_TEXTINPUT:
-        // Si un texte est entré, ajoutez le texte au buffer
         strncat(pseudoJoueur, event.text.text, 50 - strlen(pseudoJoueur) - 1);
         strncpy(inputPseudo->texte, pseudoJoueur, 50);
         break;
@@ -240,7 +238,7 @@ enum Page jouer(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, i
     int alive = 1;
     int score = 0;
     char scoreStr[16] = "Score : ";
-    sprintf(scoreStr, "score : %d", score);
+    sprintf(scoreStr, "Score : %d", score);
     srand((unsigned int)time(NULL));
     speed;
 
@@ -380,9 +378,8 @@ enum Page jouer(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, i
             {
                 speed -= 1;
                 score += 1;
-                sprintf(scoreStr, "score : %d", score);
+                sprintf(scoreStr, "Score : %d", score);
                 strncpy(scoreTexte.texte, scoreStr, 16);
-                printf("score : %d\n", score);
             }
         }
         SDL_RenderPresent(renderer);
@@ -488,7 +485,7 @@ int main(int argc, char *argv[])
 
     Bouton menuBoutton1 = initButton(width / 2 - boutonWidth / 2, boutonHeight, boutonWidth, boutonHeight, (SDL_Color){0, 0, 0, 100}, (SDL_Color){255, 255, 255, 255}, "Jouer", font);
     Bouton menuBoutton2 = initButton(width / 2 - boutonWidth / 2, 3 * boutonHeight, boutonWidth, boutonHeight, (SDL_Color){0, 0, 0, 100}, (SDL_Color){255, 255, 255, 255}, "Pseudo", font);
-    Bouton menuBoutton3 = initButton(width / 2 - boutonWidth / 2, 5 * boutonHeight, boutonWidth, boutonHeight, (SDL_Color){0, 0, 0, 100}, (SDL_Color){255, 255, 255, 255}, "Difficultée", font);
+    Bouton menuBoutton3 = initButton(width / 2 - boutonWidth / 2, 5 * boutonHeight, boutonWidth, boutonHeight, (SDL_Color){0, 0, 0, 100}, (SDL_Color){255, 255, 255, 255}, "Difficulté", font);
 
     int diffChoice = 1;
     float speed;
@@ -521,7 +518,7 @@ int main(int argc, char *argv[])
     highestScore = atoi(highestScoreStr);
     fclose(fichierRead);
     char highestScoreTexte[16];
-    sprintf(highestScoreTexte, "score : %d", highestScore);
+    sprintf(highestScoreTexte, "Highest Score : %d", highestScore);
     Bouton highestScoreRect = initButton(0, 0, width / 8, height / 12, (SDL_Color){0, 0, 0, 100}, (SDL_Color){255, 255, 255, 255}, highestScoreTexte, font);
 
     SDL_Event event;
@@ -535,7 +532,7 @@ int main(int argc, char *argv[])
         fgets(highestScoreStr, sizeof(highestScoreStr), fichierRead);
         highestScore = atoi(highestScoreStr);
         fclose(fichierRead);
-        sprintf(highestScoreTexte, "score : %d", highestScore);
+        sprintf(highestScoreTexte, "Highest Score : %d", highestScore);
         switch (diffChoice)
         {
         case 1:
@@ -557,15 +554,12 @@ int main(int argc, char *argv[])
                 break;
             case PSEUDO:
                 page = pseudo(renderer, texture, event, valider, &inputPseudo, &running, pseudoJoueur, highestScoreRect, highestScoreTexte);
-                printf("%s\n", pseudoJoueur);
                 break;
             case JOUER:
                 page = jouer(renderer, texture, event, width, height, &running, pseudoJoueur, &highestScore, speed);
-                printf("%s\n", pseudoJoueur);
                 break;
             case DIFF:
                 page = diff(renderer, texture, event, diff1, diff2, diff3, &running, highestScoreRect, highestScoreTexte, &diffChoice);
-                printf("%s\n", pseudoJoueur);
                 break;
             }
         }
