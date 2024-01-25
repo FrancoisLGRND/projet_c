@@ -374,10 +374,10 @@ enum Page jouer(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Event event, i
 
             // Changement vitesse
 
-            if (joueurX == tuyauX[i])
+            if (joueurX > tuyauX[i] && joueurX < tuyauX[i]+5)
             {
                 speed -= 1;
-                score += 1;
+                score += 1; 
                 sprintf(scoreStr, "Score : %d", score);
                 strncpy(scoreTexte.texte, scoreStr, 16);
             }
